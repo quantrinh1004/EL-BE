@@ -1,2 +1,0 @@
-GET 404 http://localhost:5000/favicon.ico 27-Mar-2025T03:06:44 +0000 3 ms
-GET 404 http://localhost:5000/ 27-Mar-2025T03:06:49 +0000 1 ms
