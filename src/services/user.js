@@ -14,9 +14,12 @@ const {
 const { JWT_SECRET_KEY, JWT_EXPIRES_TIME } = require('../configs');
 
 const generateAccessToken = async (userId, isAdmin) => {
-  const accessToken = await jwt.sign({ userId, isAdmin }, JWT_SECRET_KEY, {
-    expiresIn: JWT_EXPIRES_TIME,
-  });
+  const accessToken = await jwt.sign(
+    { userId, isAdmin }, 
+    Buffer.from(JWT_SECRET_KEY, 'base64'), 
+    { expiresIn: JWT_EXPIRES_TIME }
+  );
+  
   return accessToken;
 };
 
