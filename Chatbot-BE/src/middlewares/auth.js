@@ -1,18 +1,30 @@
 const asyncMiddleware = require('./async');
 const CustomError = require('../errors/CustomError');
-const codes = require('../errors/code');
+const errorCodes = require('../errors/code');
 const authService = require('../services/user');
 
 const auth = async (req, res, next) => {
   const { authorization } = req.headers;
-  if (!authorization) throw new CustomError(codes.UNAUTHORIZED);
+
+  if (!authorization) {
+    throw new CustomError(errorCodes.UNAUTHORIZED);
+  }
 
   const [tokenType, accessToken] = authorization.split(' ');
 
-  if (tokenType !== 'Bearer') throw new Error(codes.UNAUTHORIZED);
+  if (tokenType !== 'Bearer' || !accessToken) {
+    throw new CustomError(errorCodes.UNAUTHORIZED);
+  }
 
-  const { user } = await authService.verifyAccessToken(accessToken);
+  const user = await authService.verifyAccessToken(accessToken);
+
+  if (!user.userId) {
+    throw new CustomError(errorCodes.UNAUTHORIZED);
+  }
+
   req.user = user;
+  req.userId = user.userId;
+
   if (['/users/logout', '/users/verify'].includes(req.path)) {
     req.accessToken = accessToken;
   }

@@ -6,8 +6,8 @@ const createChat = async ({ userPrompt, aiResponse, conversationId }) => {
   return chat;
 };
 
-const getChatsByUserId = async (userId) => {
-  const chats = await Chat.find({ userId }).lean();
+const getChatsByConversationId = async (conversationId) => {
+  const chats = await Chat.find({ conversationId }).lean();
   return chats;
 };
 
@@ -33,4 +33,4 @@ const deleteChat = async (id) => {
   return chat;
 };
 
-module.exports = { createChat, getChatsByUserId, getChat, updateChat, deleteChat };
+module.exports = { createChat, getChatsByConversationId, getChat, updateChat, deleteChat };

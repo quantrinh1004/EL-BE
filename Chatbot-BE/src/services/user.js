@@ -75,7 +75,7 @@ const verifyAdmin = (accessToken) => {
 
 const verifyAccessToken = async (accessToken) => {
   try {
-    let data = jwt.verify(accessToken, IAM_PUBLIC_KEY);
+    let data = jwt.verify(accessToken, jwtKey);
     data = camelCaseKeys(data);
     const { sub: userId } = data;
 
@@ -83,7 +83,7 @@ const verifyAccessToken = async (accessToken) => {
 
     return data;
   } catch (error) {
-    logger.error(error);
+    console.error(`Failed to verify token: ${error.message}`);
     throw new CustomError(codes.UNAUTHORIZED);
   }
 };

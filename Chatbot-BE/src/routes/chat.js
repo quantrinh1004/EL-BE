@@ -5,7 +5,7 @@ const { requireAdmin } = require('../middlewares/verifyAdmin');
 
 /* eslint-disable prettier/prettier */
 router.post('/chats', requireAdmin, asyncMiddleware(chatController.createChat));
-router.get('/chats', asyncMiddleware(chatController.getChats));
+router.get('/chats', asyncMiddleware(chatController.getChatsByUserId));
 router.get('/chats/:id', asyncMiddleware(chatController.getChat));
 router.put('/chats/:id', requireAdmin, asyncMiddleware(chatController.updateChat));
 router.delete('/chats/:id', requireAdmin, asyncMiddleware(chatController.deleteChat));

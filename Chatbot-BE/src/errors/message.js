@@ -8,6 +8,8 @@ const getErrorMessage = (code) => {
       return 'Wrong password';
     case codes.USER_EXISTS:
       return 'User already exists';
+    case codes.UNAUTHORIZED:
+      return 'Quan UNAUTHORIZED';
     default:
       return null;
   }
