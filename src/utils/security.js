@@ -1,78 +1,81 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
-const { PEPPER } = require('../configs');
+const { PEPPER } = process.env;
 
-const IV_LENGTH = 16; // AES block size
-const KEY = Buffer.from(PEPPER.padEnd(32, '\0')); // Đảm bảo độ dài key là 32 bytes
+const IV_LENGTH = 16; // IV length for AES256 (16 bytes)
 
-// AES256 encryption
+// Convert PEPPER from base64 to buffer
+const key = Buffer.from(PEPPER, 'base64');
+
+// === AES256 Encryption ===
 const encrypt = (text) => {
   const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-ctr', KEY, iv);
-  
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
+  const cipher = crypto.createCipheriv('aes-256-ctr', key, iv);
 
-  return `${iv.toString('hex')}:${encrypted}`;
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+  return `${iv.toString('hex')}:${encrypted.toString('hex')}`;
 };
 
-// AES256 decoding
+// === AES256 Decryption ===
 const decrypt = (text) => {
   const textParts = text.split(':');
   const iv = Buffer.from(textParts.shift(), 'hex');
   const encryptedText = Buffer.from(textParts.join(':'), 'hex');
-  
-  const decipher = crypto.createDecipheriv('aes-256-ctr', KEY, iv);
-  
+
+  const decipher = crypto.createDecipheriv('aes-256-ctr', key, iv);
   let decrypted = decipher.update(encryptedText);
-  decrypted += decipher.final();
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
 
   return decrypted.toString();
 };
 
-// Hash SHA512
+// === SHA512 Hashing ===
 const hashSHA512 = (text) =>
   crypto.createHash('sha512').update(text).digest('hex');
 
-// Hash by bcrypt
+// === Bcrypt Hashing ===
 const hashBcrypt = async (text, salt) => {
-  return await bcrypt.hash(text, salt);
+  if (!text || !salt) throw new Error('Invalid text or salt');
+
+  const hashedBcrypt = await bcrypt.hash(text, salt);
+  return hashedBcrypt;
 };
 
-// Compare bcrypt
+// === Bcrypt Comparison ===
 const compareBcrypt = async (data, hashed) => {
+  if (!data || !hashed) throw new Error('Invalid data or hashed value');
+  
   return await bcrypt.compare(data, hashed);
 };
 
-// Create salt
+// === Generate Salt for Bcrypt ===
 const generateSalt = () => bcrypt.genSaltSync(10);
 
-// Encrypt password
+// === Encrypt Password ===
 const encryptPassword = async (password, salt) => {
-  try {
-    const hashedSHA512 = hashSHA512(password);
-    const hashedBcrypt = await hashBcrypt(hashedSHA512, salt);
-    const encryptedPassword = encrypt(hashedBcrypt);
+  if (!password || !salt) throw new Error('Invalid password or salt');
 
-    return encryptedPassword;
-  } catch (error) {
-    console.error("Encryption error:", error);
-    throw new Error("Failed to encrypt password");
-  }
+  // First, hash using SHA512
+  const hashedSHA512 = hashSHA512(password);
+
+  // Then, hash using bcrypt
+  const hashedBcrypt = await hashBcrypt(hashedSHA512, salt);
+
+  // Finally, encrypt using AES256
+  return encrypt(hashedBcrypt);
 };
 
-// Comprare password
-const comparePassword = async (newPassWord, oldPassword) => {
-  try {
-    const hashedInput = hashSHA512(newPassWord);
-    const encryptedInput = encrypt(hashedInput);
+// === Compare Password ===
+const comparePassword = async (newPassword, oldPassword) => {
+  if (!newPassword || !oldPassword) throw new Error('Invalid password');
 
-    return encryptedInput === oldPassword;
-  } catch (error) {
-    console.error("Password comparison error:", error);
-    return false;
-  }
+  const decryptedPassword = decrypt(oldPassword); // Decrypt AES256 first
+  const hashedSHA512 = hashSHA512(newPassword); // Then hash with SHA512
+
+  return await compareBcrypt(hashedSHA512, decryptedPassword);
 };
 
 module.exports = {
